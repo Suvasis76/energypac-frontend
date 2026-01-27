@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import axiosSecure from "../api/axiosSecure";
 import { FaPlus, FaEdit, FaTrash } from "react-icons/fa";
 import ProductModal from "../components/products/ProductModal";
 import ConfirmDialog from "../components/ui/ConfirmDialog";
 import AlertToast from "../components/ui/AlertToast";
+import { getProducts,deleteProduct} from "../services/productService";
+
 
 
 
@@ -15,6 +16,9 @@ export default function Products() {
     const [loading, setLoading] = useState(true);
     const [openModal, setOpenModal] = useState(false);
     const [editProduct, setEditProduct] = useState(null);
+    const [searchText, setSearchText] = useState("");
+    const [unitFilter, setUnitFilter] = useState("");
+
 
     const [error, setError] = useState("");
 
@@ -29,22 +33,29 @@ export default function Products() {
     });
 
 
-    const fetchProducts = async (url = "/api/products") => {
-        try {
-            setLoading(true);
-            const res = await axiosSecure.get(url);
+    const fetchProducts = async (url) => {
+    try {
+        setLoading(true);
 
-            setProducts(res.data.results);
-            setCount(res.data.count);
-            setNext(res.data.next);
-            setPrevious(res.data.previous);
-        } catch (err) {
-            console.log(err);
-            setError("Failed to load products");
-        } finally {
-            setLoading(false);
-        }
-    };
+        const res = await getProducts({
+            url,
+            search: searchText,
+            unit: unitFilter,
+        });
+
+        setProducts(res.data.results);
+        setCount(res.data.count);
+        setNext(res.data.next);
+        setPrevious(res.data.previous);
+    } catch (err) {
+        console.log(err);
+        setError("Failed to load products");
+    } finally {
+        setLoading(false);
+    }
+};
+
+
 
     useEffect(() => {
         fetchProducts();
@@ -84,30 +95,32 @@ export default function Products() {
 
 
     const confirmDelete = async () => {
-        try {
-            setDeleting(true);
-            await axiosSecure.delete(`/api/products/${selectedProduct.id}`);
+    try {
+        setDeleting(true);
 
-            setToast({
-                open: true,
-                type: "success",
-                message: "Product deleted successfully",
-            });
+        await deleteProduct(selectedProduct.id);
 
-            fetchProducts();
-        } catch (err) {
-            console.log(err);
-            setToast({
-                open: true,
-                type: "error",
-                message: "Failed to delete product",
-            });
-        } finally {
-            setDeleting(false);
-            setShowConfirm(false);
-            setSelectedProduct(null);
-        }
-    };
+        setToast({
+            open: true,
+            type: "success",
+            message: "Product deleted successfully",
+        });
+
+        fetchProducts();
+    } catch (err) {
+        console.log(err);
+        setToast({
+            open: true,
+            type: "error",
+            message: "Failed to delete product",
+        });
+    } finally {
+        setDeleting(false);
+        setShowConfirm(false);
+        setSelectedProduct(null);
+    }
+};
+
 
 
     return (
@@ -122,6 +135,7 @@ export default function Products() {
                         </span>
                     </div>
 
+
                     {/* ADD PRODUCT BUTTON */}
 
                     <button
@@ -134,6 +148,51 @@ export default function Products() {
 
 
                 </div>
+
+                {/* SEARCH & FILTER */}
+<div className="px-6 py-4 border-b border-slate-100 bg-slate-50">
+    <div className="flex flex-wrap gap-4">
+
+        {/* Search by Product Name */}
+        <div className="flex-1 min-w-[220px]">
+            <label className="block text-xs font-semibold text-slate-600 mb-1">
+                Search Product
+            </label>
+            <input
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+                placeholder="Search by product name"
+                className="input"
+            />
+        </div>
+
+        {/* Filter by Unit */}
+        <div className="w-40">
+            <label className="block text-xs font-semibold text-slate-600 mb-1">
+                Unit
+            </label>
+            <input
+                value={unitFilter}
+                onChange={(e) => setUnitFilter(e.target.value)}
+                className="input"
+                placeholder="e.g. pcs, kg"
+            />
+                
+        </div>
+
+        {/* Search Button */}
+        <div className=" w-32 flex items-end">
+            <button
+                onClick={() => fetchProducts()}
+                className="w-full px-5 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-500"
+            >
+                Search
+            </button>
+        </div>
+
+    </div>
+</div>
+
 
                 {/* TABLE */}
                 <div className="overflow-x-auto">

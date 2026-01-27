@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react"; // Added useEffect
 import { NavLink, useLocation } from "react-router-dom";
 import {
   FaThLarge,
@@ -6,6 +6,11 @@ import {
   FaMoneyCheckAlt,
   FaChevronDown,
   FaChevronRight,
+  FaBarcode, // Imported
+  FaCube, // Imported
+  FaUserTie, // Imported
+  FaFileExport, // Imported
+  FaHistory, // Imported
 } from "react-icons/fa";
 import { BiImport, BiExport } from "react-icons/bi";
 
@@ -44,8 +49,9 @@ export default function Sidebar({ isOpen }) {
           icon={<BiImport />}
           isOpen={isOpen}
           items={[
-            { to: "/master/item", label: "Item" },
-            { to: "/master/vendor", label: "Vendor" },
+            { to: "/master/hsn", label: "HSN Code", icon: <FaBarcode /> },
+            { to: "/master/item", label: "Item", icon: <FaCube /> },
+            { to: "/master/vendor", label: "Vendor", icon: <FaUserTie /> },
           ]}
         />
 
@@ -54,13 +60,14 @@ export default function Sidebar({ isOpen }) {
           icon={<BiExport />}
           isOpen={isOpen}
           items={[
-            { to: "/export/data", label: "Export Data" },
-            { to: "/export/log", label: "Export Log" },
+            { to: "/export/data", label: "Export Data", icon: <FaFileExport /> },
+            { to: "/export/log", label: "Export Log", icon: <FaHistory /> },
           ]}
         />
 
         <SidebarLink to="/sales" label="Sales" icon={<FaMoneyCheckAlt />} isOpen={isOpen} />
-        <SidebarLink to="/documents" label="Documents" icon={<FaFileAlt />} isOpen={isOpen} />
+        <SidebarLink to="/requisition" label="Requisition" icon={<FaFileAlt />} isOpen={isOpen} />
+        <SidebarLink to="/vendor-assignment" label="Vendor Assignment" icon={<FaFileAlt />} isOpen={isOpen} />
 
       </nav>
 
@@ -118,6 +125,13 @@ function SidebarDropdown({ label, icon, isOpen, items }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const location = useLocation();
 
+  // Close dropdown if sidebar collapses
+  useEffect(() => {
+    if (!isOpen) {
+      setIsExpanded(false);
+    }
+  }, [isOpen]);
+
   const isAnyChildActive = items.some(item => location.pathname === item.to);
 
   return (
@@ -130,7 +144,7 @@ function SidebarDropdown({ label, icon, isOpen, items }) {
             ? "bg-slate-800/50 text-white"
             : "text-slate-400 hover:bg-slate-800 hover:text-white"
           }
-          ${!isOpen ? "justify-center px-0 mx-2" : ""}
+           ${!isOpen ? "justify-center px-0 mx-2" : ""}
         `}
         title={!isOpen ? label : ""}
       >
@@ -148,17 +162,18 @@ function SidebarDropdown({ label, icon, isOpen, items }) {
       </button>
 
       {isOpen && isExpanded && (
-        <div className="ml-9 space-y-1 animate-in slide-in-from-top-2 duration-200">
+        <div className="ml-4 pl-3 border-l-2 border-slate-800 space-y-1 animate-in slide-in-from-top-2 duration-200">
           {items.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
-              className={({ isActive }) =>` block px-3 py-2 rounded-lg text-sm transition-all duration-200
+              className={({ isActive }) => ` block px-3 py-2 rounded-lg text-sm transition-all duration-200 flex items-center gap-2
                 ${isActive
                   ? "bg-blue-600/10 text-blue-400 font-semibold ring-1 ring-blue-500/20"
                   : "text-slate-400 hover:bg-slate-800 hover:text-white"
                 }`}>
-              {item.label}
+              <span className="text-base opacity-70">{item.icon}</span>
+              <span>{item.label}</span>
             </NavLink>
           ))}
         </div>

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { FaTimes } from "react-icons/fa";
-import axiosSecure from "../../api/axiosSecure";
+import { createProduct, updateProduct } from "../../services/productService";
+
 
 export default function ProductModal({
     open,
@@ -66,39 +67,36 @@ export default function ProductModal({
        SUBMIT (ADD / EDIT)
        ========================= */
     const handleSubmit = async (e) => {
-        e.preventDefault();
-        setError("");
+    e.preventDefault();
+    setError("");
 
-        try {
-            setLoading(true);
+    try {
+        setLoading(true);
 
-            const payload = {
-                ...form,
-                current_stock: Number(form.current_stock),
-                reorder_level: Number(form.reorder_level),
-                rate: Number(form.rate),
-            };
+        const payload = {
+            ...form,
+            current_stock: Number(form.current_stock),
+            reorder_level: Number(form.reorder_level),
+            rate: Number(form.rate),
+        };
 
-            if (mode === "edit") {
-                // ✅ PUT using UUID
-                await axiosSecure.put(`/api/products/${product.id}`, payload);
-            } else {
-                // ✅ POST (add)
-                await axiosSecure.post("/api/products", payload);
-            }
-
-            onSuccess(mode);
-            onClose();
-
-        } catch (err) {
-            setError(err.response?.data?.detail || "Failed to save product");
-
-            onSuccess("error");
+        if (mode === "edit") {
+            await updateProduct(product.id, payload);
+        } else {
+            await createProduct(payload);
         }
-        finally {
-            setLoading(false);
-        }
-    };
+
+        onSuccess(mode);
+        onClose();
+
+    } catch (err) {
+        setError(err.response?.data?.detail || "Failed to save product");
+        onSuccess("error");
+    } finally {
+        setLoading(false);
+    }
+};
+
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
