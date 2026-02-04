@@ -3,7 +3,7 @@ import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import Layout from "./components/Layout.jsx";
 
-import Dashboard from "./pages/Dashboard.jsx";
+import Dashboard from "./pages/Dashboard.jsx"
 import Requisition from "./pages/Requisition.jsx";
 import Login from "./pages/Login.jsx";
 import Products from "./pages/Products.jsx";
