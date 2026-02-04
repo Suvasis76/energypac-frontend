@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const axiosSecure = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL,
+  baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:8000",
   headers: {
     "Content-Type": "application/json",
   },
@@ -12,9 +12,12 @@ const axiosSecure = axios.create({
    ========================= */
 axiosSecure.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("access_token");
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    // ✅ Only access localStorage in browser environment
+    if (typeof window !== "undefined") {
+      const token = localStorage.getItem("access_token");
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
     }
     return config;
   },
@@ -38,8 +41,9 @@ const processQueue = (error, token = null) => {
   failedQueue = [];
 };
 
-// Helper to get cookie
+// Helper to get cookie - SSR safe
 const getCookie = (name) => {
+  if (typeof document === "undefined") return null;
   const value = `; ${document.cookie}`;
   const parts = value.split(`; ${name}=`);
   if (parts.length === 2) return parts.pop().split(';').shift();
@@ -62,9 +66,11 @@ axiosSecure.interceptors.response.use(
       const refreshToken = getCookie("refresh_token");
 
       if (!refreshToken) {
-        localStorage.clear();
-        document.cookie = "refresh_token=; path=/; max-age=0";
-        window.location.href = "/login";
+        if (typeof window !== "undefined") {
+          localStorage.clear();
+          document.cookie = "refresh_token=; path=/; max-age=0";
+          window.location.href = "/login";
+        }
         return Promise.reject(error);
       }
 
@@ -92,9 +98,10 @@ axiosSecure.interceptors.response.use(
         const { access, refresh } = res.data;
 
         // store new tokens
-        localStorage.setItem("access_token", access);
-        // localStorage.setItem("refresh_token", refresh); // No longer in local storage
-        document.cookie = `refresh_token=${refresh}; path=/; max-age=86400; SameSite=Lax`;
+        if (typeof window !== "undefined") {
+          localStorage.setItem("access_token", access);
+          document.cookie = `refresh_token=${refresh}; path=/; max-age=86400; SameSite=Lax`;
+        }
 
         // update default header
         axiosSecure.defaults.headers.Authorization = `Bearer ${access}`;
@@ -106,15 +113,16 @@ axiosSecure.interceptors.response.use(
         return axiosSecure(originalRequest);
       } catch (err) {
         processQueue(err, null);
-        localStorage.clear();
-        document.cookie = "refresh_token=; path=/; max-age=0";
-        window.location.href = "/login";
+        if (typeof window !== "undefined") {
+          localStorage.clear();
+          document.cookie = "refresh_token=; path=/; max-age=0";
+          window.location.href = "/login";
+        }
         return Promise.reject(err);
       } finally {
         isRefreshing = false;
       }
     }
-
 
     return Promise.reject(error);
   }
